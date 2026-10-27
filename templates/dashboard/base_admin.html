@@ -1,0 +1,65 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>{% block title %}Management - {{ SITE_NAME }}{% endblock %}</title>
+<link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png" sizes="64x64">
+<link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
+<link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="console">
+<a class="skip" href="#main">Skip to main content</a>
+{% with n=request.resolver_match.url_name %}
+<div class="shell">
+  <aside class="console-side" id="console-side" aria-label="Management navigation">
+    <a class="logo-chip side-logo" href="{% url 'dashboard' %}" aria-label="Datacense management - dashboard"><img src="{% static 'img/logo-full.png' %}" alt="Datacense" width="1200" height="184"></a>
+    <p class="side-sub">Management</p>
+    <nav>
+      <a href="{% url 'dashboard' %}"{% if n == 'dashboard' %} aria-current="page"{% endif %}><span aria-hidden="true">&#9638;</span> Dashboard</a>
+      <a href="{% url 'manage_skills' %}"{% if n == 'manage_skills' or n == 'skill_edit' or n == 'skill_preview' %} aria-current="page"{% endif %}><span aria-hidden="true">&#9776;</span> Manage Skills</a>
+      {% if perms.library.add_skill %}<a href="{% url 'skill_create' %}"{% if n == 'skill_create' %} aria-current="page"{% endif %}><span aria-hidden="true">&#43;</span> Add Skill</a>{% endif %}
+      {% if perms.library.import_skills %}<a href="{% url 'import_skills' %}"{% if n == 'import_skills' or n == 'import_review' %} aria-current="page"{% endif %}><span aria-hidden="true">&#8681;</span> Import Skills</a>{% endif %}
+      <a href="{% url 'manage_categories' %}"{% if n == 'manage_categories' or n == 'category_edit' %} aria-current="page"{% endif %}><span aria-hidden="true">&#9783;</span> Categories</a>
+      {% if perms.library.view_activitylog %}<a href="{% url 'activity' %}"{% if n == 'activity' %} aria-current="page"{% endif %}><span aria-hidden="true">&#9201;</span> Activity</a>{% endif %}
+      {% if perms.accounts.manage_team or perms.accounts.manage_settings or perms.accounts.export_library %}
+      <p class="side-label">Super Admin</p>
+      {% if perms.accounts.manage_team %}<a href="{% url 'team' %}"{% if n == 'team' or n == 'team_edit' %} aria-current="page"{% endif %}><span aria-hidden="true">&#9787;</span> Team Management</a>{% endif %}
+      {% if perms.accounts.manage_settings %}<a href="{% url 'settings' %}"{% if n == 'settings' %} aria-current="page"{% endif %}><span aria-hidden="true">&#9881;</span> Settings</a>{% endif %}
+      {% if perms.accounts.export_library %}<a href="{% url 'backup' %}"{% if n == 'backup' %} aria-current="page"{% endif %}><span aria-hidden="true">&#10515;</span> Backup &amp; Export</a>{% endif %}
+      {% endif %}
+    </nav>
+  </aside>
+  <div class="console-main">
+    <header class="console-top">
+      <a class="top-icon" href="{% url 'dashboard' %}" aria-label="Datacense management - dashboard"><img src="{% static 'img/logo-d.png' %}" alt="Datacense" width="256" height="256"></a>
+      <button type="button" class="btn slim side-open" id="console-menu" aria-expanded="false" aria-controls="console-side">Menu</button>
+      <div class="grow"></div>
+      <a class="btn slim" href="{% url 'home' %}" target="_blank" rel="noopener">View public library &#8599;</a>
+      <details class="profile">
+        <summary><span class="avatar" aria-hidden="true">{{ user.display_name|slice:":1"|upper }}</span><span class="who"><b>{{ user.display_name }}</b><small>{{ user.role_label }}</small></span></summary>
+        <div class="menu">
+          <p class="small muted">{{ user.email }}</p>
+          <a class="btn slim block mb" href="{% url 'password_change' %}">Change password</a>
+          <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button type="submit" class="btn slim block">Sign out</button></form>
+        </div>
+      </details>
+    </header>
+    {% if messages %}<div class="wrap"><ul class="messages" role="status">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul></div>{% endif %}
+    <main id="main" tabindex="-1">
+    {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endwith %}
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+  <form method="dialog">
+    <h2 id="confirm-title">Please confirm</h2>
+    <p id="confirm-message"></p>
+    <div class="row end"><button class="btn" value="cancel">Cancel</button><button class="btn primary" value="ok" id="confirm-ok">Confirm</button></div>
+  </form>
+</dialog>
+<script src="{% static 'js/app.js' %}" defer></script>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load static %}{% static 'img/icons.svg' as ic %}
+{% block title %}My Collection - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="{% url 'home' %}">Home</a> &rsaquo; <span aria-current="page">My Collection</span></nav>
+  <div class="page-head"><div><h1>My Collection <span class="number" data-coll-count>0</span></h1>
+    <p class="muted">Skills you have picked from any category, ready to download together as one ZIP. Saved in <strong>this browser only</strong>; separate from My Favorites.</p></div>
+    <a class="btn" href="{% url 'skill_list' %}">Continue Browsing</a></div>
+  <p class="minor">The ZIP contains one Markdown (<code>.md</code>) file per skill, named after the skill, with no folders. Skills that depend on supporting files are marked below so you can download their complete package separately.</p>
+  <noscript><p class="notice">My Collection needs JavaScript to remember your choices. You can still <a href="{% url 'skill_list' %}">browse all skills</a>.</p></noscript>
+  <div id="coll-gone" class="notice" hidden></div>
+  <div id="coll-tools" class="manage-bar" hidden>
+    <label class="checkline"><input type="checkbox" id="coll-all"> Select all</label>
+    <button type="button" class="btn slim" id="coll-remove-selected" disabled>Remove Selected (<span id="coll-sel-n">0</span>)</button>
+    <button type="button" class="btn slim danger" id="coll-clear">Clear Collection</button>
+    <span class="grow"></span>
+    <form method="post" action="{% url 'collection_download' %}" data-collection-form data-collection-checked>{% csrf_token %}<input type="hidden" name="ids" value="">
+      <button class="btn primary" type="submit" id="coll-download-selected" disabled><svg class="icon" aria-hidden="true"><use href="{{ ic }}#download"/></svg> Download Selected as ZIP</button></form>
+  </div>
+  <p class="minor" id="coll-total" hidden><strong id="coll-total-n">0</strong> valid skill<span id="coll-total-s">s</span> in your collection (limit {{ COLLECTION_MAX }}).</p>
+  <div id="coll-list" data-url="{% url 'collection_items' %}" aria-live="polite"></div>
+  <div class="empty" id="coll-empty" hidden><h2>Your collection is empty</h2><p>Use <em>Add to Collection</em> on any skill, from any category, then come back here to download them together.</p><a class="btn primary" href="{% url 'skill_list' %}">Explore Skills</a></div>
+</div>
+{% endblock %}

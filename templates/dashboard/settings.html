@@ -1,0 +1,18 @@
+{% extends "dashboard/base_admin.html" %}
+{% block title %}Settings - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section narrow">
+  <div class="page-head"><h1>Settings</h1></div>
+  <div class="paper">
+    <form method="post" novalidate>{% csrf_token %}
+      {% if form.non_field_errors %}<div class="notice error">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+      <div class="field"><label class="checkline">{{ form.public_library_download_enabled }} {{ form.public_library_download_enabled.label }}</label>
+        <div class="help">When off, the "Download Skills" button and the whole-library ZIP are removed. Per-skill and per-category downloads stay available.</div></div>
+      <div class="field"><label for="{{ form.intro_text.id_for_label }}">{{ form.intro_text.label }}</label>{{ form.intro_text }}{{ form.intro_text.errors }}</div>
+      <div class="field"><label for="{{ form.footer_note.id_for_label }}">{{ form.footer_note.label }}</label>{{ form.footer_note }}{{ form.footer_note.errors }}</div>
+      <button class="btn primary" type="submit">Save settings</button>
+    </form>
+  </div>
+  <p class="help mt">Security-sensitive values (secret key, database, e-mail server, HTTPS) are configured through environment variables on the server, not in this page.</p>
+</div>
+{% endblock %}

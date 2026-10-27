@@ -1,0 +1,83 @@
+{% extends "dashboard/base_admin.html" %}
+{% block title %}{% if skill %}Edit Skill{% else %}Add Skill{% endif %} - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section">
+  <p class="crumbs"><a href="{% url 'manage_skills' %}">&larr; Manage Skills</a></p>
+  <div class="page-head"><h1>{% if skill %}Edit Skill{% else %}Add Skill{% endif %}</h1></div>
+
+  {% if not skill and not from_upload %}
+  <div class="option-tabs">
+    <div class="option">
+      <h2><span class="letter" aria-hidden="true">A</span> Create Skill</h2>
+      <p class="muted">Type the title, description, category, tags and the complete Markdown instructions in the form below.</p>
+      <a class="btn" href="#skill-form">Go to the form &darr;</a>
+    </div>
+    <div class="option">
+      <h2><span class="letter" aria-hidden="true">B</span> Upload Skill</h2>
+      <p class="muted">Choose a <code>.md</code> file. We read it and fill in the form so you can review everything before saving.</p>
+      <form method="post" action="{% url 'skill_upload' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="field"><label for="skill-file" class="sr-only">Markdown file</label><input id="skill-file" type="file" name="file" accept=".md" required></div>
+        <button class="btn primary" type="submit">Read file</button>
+        {% if perms.library.import_skills %}<a class="btn" href="{% url 'import_skills' %}">Import many files or a ZIP</a>{% endif %}
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if from_upload %}
+  <div class="notice info" role="status"><strong>Review before saving.</strong> Details were read from <code>{{ from_upload }}</code>. Nothing is saved until you press Save skill. It will be saved as a Draft unless you choose Published.</div>
+  {% if clash %}<div class="notice" role="alert">A similar skill already exists: <a href="{% url 'skill_edit' clash.pk %}">{{ clash.title }}</a> (same title, slug or content). Change the title/slug, or edit that skill instead.</div>{% endif %}
+  {% endif %}
+
+  <form method="post" enctype="multipart/form-data" novalidate id="skill-form">
+    {% csrf_token %}{{ form.source_filename }}
+    {% if form.non_field_errors %}<div class="notice error" role="alert">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+    {% if form.errors %}<div class="notice error" role="alert">Please fix the highlighted fields.</div>{% endif %}
+    {% if not skill and not from_upload %}<h2>Option A: Create Skill</h2>{% endif %}
+    <div class="grid-2">
+      <div class="paper">
+        <div class="field"><label for="{{ form.title.id_for_label }}">Title</label>{{ form.title }}{{ form.title.errors }}</div>
+        <div class="field"><label for="{{ form.slug.id_for_label }}">Slug (web address)</label>{{ form.slug }}<div class="help">{{ form.slug.help_text }}</div>{{ form.slug.errors }}</div>
+        <div class="field"><label for="{{ form.description.id_for_label }}">Short description</label>{{ form.description }}{{ form.description.errors }}</div>
+        <div class="field"><label for="{{ form.category.id_for_label }}">Major domain</label>{{ form.category }}{{ form.category.errors }}
+          {% if perms.library.add_category %}<label for="{{ form.new_category.id_for_label }}" class="mt">{{ form.new_category.label }}</label>{{ form.new_category }}<div class="help">{{ form.new_category.help_text }}</div>{{ form.new_category.errors }}{% endif %}</div>
+        <div class="field"><label for="{{ form.subcategory.id_for_label }}">Subcategory</label>{{ form.subcategory }}<div class="help">Only subcategories of the selected domain are offered.</div>{{ form.subcategory.errors }}
+          {% if perms.library.add_category %}<label for="{{ form.new_subcategory.id_for_label }}" class="mt">{{ form.new_subcategory.label }}</label>{{ form.new_subcategory }}<div class="help">{{ form.new_subcategory.help_text }}</div>{{ form.new_subcategory.errors }}{% endif %}</div>
+        <div class="field"><label for="{{ form.tags.id_for_label }}">Tags</label>{{ form.tags }}<div class="help">{{ form.tags.help_text }}</div>{{ form.tags.errors }}</div>
+      </div>
+      <div class="paper">
+        {% if perms.library.publish_skill %}
+        <div class="field"><label for="{{ form.status.id_for_label }}">Publication status</label>{{ form.status }}{{ form.status.errors }}<div class="help">Draft skills are private. Only Published skills appear on the public site.</div></div>
+        <div class="field"><label class="checkline">{{ form.is_featured }} Show in Featured skills on the home page</label></div>
+        {% else %}<p class="notice info">New skills are saved as drafts. Your account cannot change publication status.</p>{% endif %}
+        <div class="field"><label for="{{ form.uploaded_file.id_for_label }}">{{ form.uploaded_file.label }}</label>{{ form.uploaded_file }}
+          <div class="help">.md, .txt, .pdf, .docx, .xlsx, .pptx, .csv, .json or .zip. If the Markdown box is empty, a .md/.txt file fills it.</div>{{ form.uploaded_file.errors }}</div>
+        {% if skill %}
+        <ul class="meta-list small">
+          <li>Created {{ skill.created_at|date:"j M Y H:i" }}{% if skill.created_by %} by {{ skill.created_by.email }}{% endif %}</li>
+          <li>Last updated {{ skill.updated_at|date:"j M Y H:i" }}</li>
+          {% if skill.source_ref %}<li>Reference {{ skill.source_ref }}</li>{% endif %}
+          {% if skill.uploaded_file %}<li><a href="{% url 'skill_original_file' skill.pk %}">Download original file</a> ({{ skill.original_filename }})</li>{% endif %}
+          {% for a in skill.attachments.all %}<li>Attachment: <a href="{% url 'attachment_admin' skill.pk a.pk %}">{{ a.path }}</a></li>{% endfor %}
+        </ul>{% endif %}
+      </div>
+    </div>
+    <div class="field mt">
+      <label for="{{ form.content.id_for_label }}">Markdown instructions</label>
+      <div class="editor-tabs" role="tablist" aria-label="Editor view">
+        <button type="button" class="btn slim" role="tab" aria-selected="true" data-md-tab="write">Write</button>
+        <button type="button" class="btn slim" role="tab" aria-selected="false" data-md-tab="preview" data-preview-url="{% url 'markdown_preview' %}">Preview</button>
+      </div>
+      {{ form.content }}
+      <div id="md-preview" class="preview-pane md" hidden></div>
+      <div class="help">{{ form.content.help_text }}</div>{{ form.content.errors }}
+    </div>
+    <div class="row">
+      <button class="btn primary" type="submit">Save skill</button>
+      <button class="btn" type="submit" name="save_preview" value="1">Save and preview</button>
+      <a class="btn" href="{% url 'manage_skills' %}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% load static library_extras %}{% static 'img/icons.svg' as ic %}{% for domain, items in groups %}
+<section class="coll-group" aria-labelledby="cg{{ domain.pk }}">
+  <h2 id="cg{{ domain.pk }}"><span class="glyph" aria-hidden="true"><svg class="icon"><use href="{{ ic }}#{{ domain.name|domain_icon }}"/></svg></span> {{ domain.name }} <span class="number">{{ items|length }}</span></h2>
+  <ul class="coll-list">{% for s in items %}
+    <li data-id="{{ s.pk }}">
+      <label class="pick"><input type="checkbox" class="coll-check" data-coll-select="{{ s.pk }}"><span class="sr-only">Select {{ s.title }}</span></label>
+      <div class="coll-body">
+        <h3><a href="{% url 'skill_detail' s.slug %}">{{ s.title }}</a></h3>
+        <p class="crumb-line">{{ domain.name }}{% if s.subcategory %} <span aria-hidden="true">&rsaquo;</span> {{ s.subcategory.name }}{% endif %}</p>
+        {% if s.description %}<p class="desc">{{ s.description|truncatechars:160 }}</p>{% endif %}
+        {% if s.attachments.all %}<p class="small"><span class="badge featured">Has supporting files</span> The ZIP contains the Markdown only. <a href="{% url 'skill_package_download' s.slug %}">Download the complete package (.zip)</a></p>{% endif %}
+      </div>
+      <button type="button" class="btn slim" data-coll-remove="{{ s.pk }}" aria-label="Remove {{ s.title }} from My Collection">Remove</button>
+    </li>{% endfor %}
+  </ul>
+</section>{% endfor %}

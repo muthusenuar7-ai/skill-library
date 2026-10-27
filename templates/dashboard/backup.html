@@ -1,0 +1,16 @@
+{% extends "dashboard/base_admin.html" %}
+{% block title %}Backup &amp; Export - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section narrow">
+  <div class="page-head"><h1>Backup &amp; Export</h1></div>
+  <div class="paper">
+    <p>The backup contains <strong>every</strong> skill - published, draft and archived - plus categories and supporting files.</p>
+    <ul class="meta-list"><li>{{ skills }} skills</li><li>{{ categories }} categories</li><li>{{ attachments }} supporting files</li></ul>
+    <div class="row mt">
+      <a class="btn primary" href="{% url 'export_library' %}?format=zip">Download full backup (.zip)</a>
+      <a class="btn" href="{% url 'export_library' %}?format=json">Download skills only (.json)</a>
+    </div>
+    <p class="help mt">Both formats can be read back with <em>Import Skills</em>. Keep backups somewhere private: they include unpublished content.</p>
+  </div>
+</div>
+{% endblock %}

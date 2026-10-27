@@ -1,0 +1,50 @@
+{% extends "dashboard/base_admin.html" %}
+{% block title %}Team Management - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section">
+  <div class="page-head"><h1>Team Management</h1></div>
+  {% if setup %}
+  <div class="paper mb" role="status">
+    <h2>{% if setup.reset %}Password reset{% else %}Invitation{% endif %} for {{ setup.user.email }}</h2>
+    {% if setup.sent %}<p>An e-mail with a one-time link was sent to <strong>{{ setup.user.email }}</strong>.</p>
+    {% else %}<p>{% if not email_configured %}E-mail delivery is not configured, so share this one-time link{% else %}Share this one-time link{% endif %} privately with its owner. It lets them set their own password, stops working once used or when it expires, and is shown only now.</p>
+    <div class="link-box mono">{{ setup.link }}</div>{% endif %}
+  </div>
+  {% endif %}
+  <div class="grid-2 wide-left">
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Account</th><th>Access level</th><th>Status</th><th>Actions</th></tr></thead>
+      <tbody>{% for m in members %}<tr>
+        <td><strong>{{ m.email }}</strong><br><span class="muted small">{{ m.full_name|default:"-" }}{% if m.last_login %} &middot; last sign-in {{ m.last_login|date:"j M Y" }}{% endif %}</span></td>
+        <td>{{ m.role_label }}</td>
+        <td>{% if not m.is_active %}<span class="badge archived">Deactivated</span>{% elif m.has_usable_password %}<span class="badge published">Active</span>{% else %}<span class="badge draft">Awaiting activation</span>{% endif %}</td>
+        <td><div class="row"><a class="btn slim" href="{% url 'team_edit' m.pk %}">Edit</a>
+          {% if m.is_active %}
+            <form class="inline" method="post" action="{% url 'team_link' m.pk %}" data-confirm="{% if m.has_usable_password %}Send a password reset for{% else %}Send a new invitation to{% endif %} {{ m.email|escapejs }}?">{% csrf_token %}<button class="btn slim" type="submit">{% if m.has_usable_password %}Reset password{% else %}New invitation{% endif %}</button></form>
+            {% if m.pk != user.pk %}<form class="inline" method="post" action="{% url 'team_toggle' m.pk %}" data-confirm="Deactivate {{ m.email|escapejs }}? They will no longer be able to sign in.">{% csrf_token %}<button class="btn slim danger" type="submit">Deactivate</button></form>{% endif %}
+          {% else %}
+            <form class="inline" method="post" action="{% url 'team_toggle' m.pk %}">{% csrf_token %}<button class="btn slim" type="submit">Reactivate</button></form>
+          {% endif %}</div></td>
+      </tr>{% endfor %}</tbody>
+    </table></div>
+    <div>
+      <div class="paper">
+        <h2>Add a team member</h2>
+        <form method="post" novalidate>{% csrf_token %}
+          {% if form.non_field_errors %}<div class="notice error">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+          <div class="field"><label for="{{ form.full_name.id_for_label }}">Full name</label>{{ form.full_name }}{{ form.full_name.errors }}</div>
+          <div class="field"><label for="{{ form.email.id_for_label }}">E-mail address</label>{{ form.email }}{{ form.email.errors }}</div>
+          <div class="field"><label for="{{ form.role.id_for_label }}">Access level</label>{{ form.role }}{{ form.role.errors }}
+            <div class="help"><strong>Admin</strong> manages skills, imports and publishing. <strong>Super Admin</strong> also manages the team, settings, backups and category edits.</div></div>
+          <button class="btn primary" type="submit">Create account</button>
+          <p class="help mt">{% if email_configured %}An invitation e-mail is sent automatically.{% else %}E-mail is not configured: you will get a one-time setup link to pass on.{% endif %}</p>
+        </form>
+      </div>
+      <div class="paper">
+        <h2>Recent account actions</h2>
+        <ul class="meta-list">{% for a in recent_actions %}<li><span class="small muted">{{ a.created_at|date:"j M H:i" }}</span> {{ a.actor_email }} &ndash; {{ a.description }}</li>{% empty %}<li class="muted">Nothing yet.</li>{% endfor %}</ul>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

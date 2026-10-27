@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% load static library_extras %}{% static 'img/icons.svg' as ic %}
+{% block title %}Datacense AI Skill Library - Discover Skills. Unlock Possibilities.{% endblock %}
+{% block content %}
+<section class="hero-v2" aria-labelledby="hero-h">
+  <img class="hero-art" src="{% static 'img/hero-network.svg' %}" alt="" width="1600" height="700" fetchpriority="high">
+  <div class="hero-inner">
+    <h1 id="hero-h">Discover Skills. <span class="accent">Unlock Possibilities.</span></h1>
+    <p class="lead">Explore practical AI skills that help you automate tasks, improve productivity, and work smarter.</p>
+    <form class="hero-search" action="{% url 'skill_list' %}" method="get" role="search">
+      <div class="field-wrap"><svg class="icon" aria-hidden="true"><use href="{{ ic }}#search"/></svg>
+        <label class="sr-only" for="hero-q">Search skills</label>
+        <input id="hero-q" type="search" name="q" maxlength="100" placeholder="Search skills, topics, tools, or workflows..." autocomplete="off"></div>
+      <button class="btn primary large" type="submit">Search</button>
+    </form>
+    {% if topics %}<div class="topics"><span>Popular topics:</span>{% for t in topics %}<a class="topic" href="{% url 'skill_list' %}?tag={{ t|urlencode }}">{{ t }}</a>{% endfor %}</div>{% endif %}
+  </div>
+</section>
+
+<div class="wrap">
+  <section class="stats-float" aria-label="Library at a glance">
+    <div class="stat-tile"><span class="ico" aria-hidden="true"><svg class="icon"><use href="{{ ic }}#doc"/></svg></span><div><b>{{ stats.skills }}</b><span>Published skill{{ stats.skills|pluralize }}</span></div></div>
+    <div class="stat-tile"><span class="ico" aria-hidden="true"><svg class="icon"><use href="{{ ic }}#folder"/></svg></span><div><b>{{ stats.domains }}</b><span>Major domain{{ stats.domains|pluralize }}</span></div></div>
+    <div class="stat-tile"><span class="ico" aria-hidden="true"><svg class="icon"><use href="{{ ic }}#layers"/></svg></span><div><b>{{ stats.subcategories }}</b><span>Subcategor{{ stats.subcategories|pluralize:"y,ies" }}</span></div></div>
+    <div class="stat-tile"><span class="ico" aria-hidden="true"><svg class="icon"><use href="{{ ic }}#clock"/></svg></span><div><b>{{ stats.recent }}</b><span>Added in the last 30 days</span></div></div>
+  </section>
+
+  <section class="lp-section" id="domains" aria-labelledby="dom-h">
+    <div class="section-head"><div><h2 id="dom-h">Explore by Domain</h2><p>Start with the kind of work you do.</p></div>
+      <a class="link-arrow" href="{% url 'categories' %}">View All Categories <svg class="icon" aria-hidden="true"><use href="{{ ic }}#arrow"/></svg></a></div>
+    {% if domains %}
+    <div class="domain-grid">{% for d in domains %}
+      <div class="domain-card">
+        <span class="ico" aria-hidden="true"><svg class="icon"><use href="{{ ic }}#{{ d.name|domain_icon }}"/></svg></span>
+        <h3><a href="{% url 'category' d.slug %}">{{ d.name }}</a></h3>
+        <p>{% if d.blurb %}{{ d.blurb|truncatechars:90 }}{% else %}Browse the skills in {{ d.name }}.{% endif %}</p>
+        {% if d.top_subs %}<div class="subchips" aria-label="Popular subcategories in {{ d.name }}">{% for sc in d.top_subs %}<a href="{% url 'category' sc.slug %}">{{ sc.name|truncatechars:26 }}</a>{% endfor %}</div>{% endif %}
+        <span class="foot"><span><b>{{ d.published_total }}</b> skill{{ d.published_total|pluralize }}</span><span class="go">Explore <svg class="icon" aria-hidden="true"><use href="{{ ic }}#arrow"/></svg></span></span>
+      </div>{% endfor %}
+    </div>
+    {% else %}<p class="empty-note">No published skills yet. Check back soon.</p>{% endif %}
+  </section>
+
+  {% if featured %}
+  <section class="lp-section" aria-labelledby="feat-h">
+    <div class="section-head"><div><h2 id="feat-h">Featured Skills</h2><p>Selected by the Datacense team.</p></div><a class="link-arrow" href="{% url 'skill_list' %}">View all skills <svg class="icon" aria-hidden="true"><use href="{{ ic }}#arrow"/></svg></a></div>
+    <ul class="cards">{% for s in featured %}{% include "library/_card.html" %}{% endfor %}</ul>
+  </section>
+  {% endif %}
+
+  <section class="lp-section" aria-labelledby="recent-h">
+    <div class="section-head"><div><h2 id="recent-h">Recently Added</h2><p>The newest published skills.</p></div><a class="link-arrow" href="{% url 'skill_list' %}">View all <svg class="icon" aria-hidden="true"><use href="{{ ic }}#arrow"/></svg></a></div>
+    {% if recent %}<ul class="cards">{% for s in recent %}{% include "library/_card.html" %}{% endfor %}</ul>
+    {% else %}<p class="empty-note">No skills have been published yet.</p>{% endif %}
+  </section>
+
+  <section class="lp-section" aria-labelledby="how-h">
+    <div class="section-head"><div><h2 id="how-h">How It Works</h2><p>From question to result in four steps.</p></div></div>
+    <ol class="steps4">
+      <li><span class="n" aria-hidden="true">1</span><span class="ico" aria-hidden="true"><svg class="icon"><use href="{{ ic }}#search"/></svg></span><h3>Discover</h3><p>Search by task, topic or tool, or start from a domain.</p></li>
+      <li><span class="n" aria-hidden="true">2</span><span class="ico" aria-hidden="true"><svg class="icon"><use href="{{ ic }}#compass"/></svg></span><h3>Explore</h3><p>Preview the full instructions and see what the skill needs from you.</p></li>
+      <li><span class="n" aria-hidden="true">3</span><span class="ico" aria-hidden="true"><svg class="icon"><use href="{{ ic }}#download"/></svg></span><h3>Download</h3><p>Copy the instructions or download the skill as a Markdown file.</p></li>
+      <li><span class="n" aria-hidden="true">4</span><span class="ico" aria-hidden="true"><svg class="icon"><use href="{{ ic }}#bolt"/></svg></span><h3>Apply</h3><p>Paste it into your AI assistant and get to work.</p></li>
+    </ol>
+  </section>
+
+  <section class="lp-section" aria-labelledby="brand-h">
+    <div class="brand-banner">
+      <img src="{% static 'img/logo-full.png' %}" alt="Datacense" width="1200" height="184">
+      <div><h2 id="brand-h">Datacense AI Skill Library</h2><p>{% if stats.skills %}{{ stats.skills }} published skill{{ stats.skills|pluralize }} across {{ stats.domains }} major domain{{ stats.domains|pluralize }}, written to be read, copied and put to work.{% else %}Practical, ready-to-use AI skills, written to be read, copied and put to work.{% endif %}</p></div>
+      <a class="btn primary large" href="{% url 'skill_list' %}">Explore Skills</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

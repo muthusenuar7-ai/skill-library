@@ -1,0 +1,38 @@
+{% extends "dashboard/base_admin.html" %}
+{% block title %}Dashboard - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section">
+  <div class="page-head"><div><h1>Dashboard</h1><p class="muted">Welcome, {{ user.display_name }}. You are signed in as <strong>{{ user.role_label }}</strong>.</p></div>
+    <div class="row">{% if perms.library.add_skill %}<a class="btn primary" href="{% url 'skill_create' %}">+ Add Skill</a>{% endif %}{% if perms.library.import_skills %}<a class="btn" href="{% url 'import_skills' %}">Import Skills</a>{% endif %}</div></div>
+  <div class="stat-grid">
+    <a class="stat-card" href="{% url 'manage_skills' %}"><b>{{ total_skills }}</b><span>Total skills</span></a>
+    <a class="stat-card ok" href="{% url 'manage_skills' %}?status=published"><b>{{ published }}</b><span>Published</span></a>
+    <a class="stat-card warn" href="{% url 'manage_skills' %}?status=draft"><b>{{ drafts }}</b><span>Drafts</span></a>
+    <a class="stat-card" href="{% url 'manage_skills' %}?status=archived"><b>{{ archived }}</b><span>Archived</span></a>
+    <a class="stat-card" href="{% url 'manage_categories' %}"><b>{{ total_categories }}</b><span>Categories</span></a>
+  </div>
+  <div class="grid-2">
+    <section class="paper" aria-labelledby="recent-h">
+      <h2 id="recent-h">Recently updated skills</h2>
+      {% if recent %}<ul class="meta-list">{% for s in recent %}<li class="row spread"><span><a href="{% url 'skill_edit' s.pk %}">{{ s.title }}</a> <span class="muted small">{{ s.category.name }}</span></span><span class="badge {{ s.status }}">{{ s.get_status_display }}</span></li>{% endfor %}</ul>
+      {% else %}<p class="muted">No skills yet. Add one or import the library.</p>{% endif %}
+      <a class="btn slim mt" href="{% url 'manage_skills' %}">Manage Skills</a>
+    </section>
+    <section class="paper" aria-labelledby="act-h">
+      <h2 id="act-h">Recent activity</h2>
+      <ul class="meta-list">{% for a in activity %}<li><span class="small muted">{{ a.created_at|date:"j M H:i" }}</span> {{ a.actor_email }} &ndash; {{ a.description|default:a.action }}</li>{% empty %}<li class="muted">Nothing recorded yet.</li>{% endfor %}</ul>
+      {% if perms.library.view_activitylog %}<a class="btn slim mt" href="{% url 'activity' %}">Full activity</a>{% endif %}
+    </section>
+    {% if team_members %}
+    <section class="paper" aria-labelledby="team-h">
+      <h2 id="team-h">Team</h2>
+      <ul class="meta-list">{% for m in team_members %}<li class="row spread"><span>{{ m.email }}</span><span class="muted small">{{ m.role_label }}{% if not m.is_active %} (inactive){% endif %}</span></li>{% endfor %}</ul>
+      <a class="btn slim mt" href="{% url 'team' %}">Team Management</a>
+    </section>
+    {% endif %}
+    {% if perms.accounts.export_library %}
+    <section class="paper"><h2>Backup &amp; Export</h2><p class="muted">Download a full copy of every skill, including drafts and archived items.</p><a class="btn slim" href="{% url 'backup' %}">Open Backup &amp; Export</a></section>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

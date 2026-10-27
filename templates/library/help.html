@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Help - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section prose">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="{% url 'home' %}">Home</a> &rsaquo; <span aria-current="page">Help</span></nav>
+  <h1>Help</h1>
+  <h2>Finding a skill</h2>
+  <p>Use <a href="{% url 'skill_list' %}">Explore Skills</a>. Type words in the search box - a skill must contain all of them in its title, description, tags, instructions, domain or subcategory. Pick a <strong>major domain</strong> in the left panel to open its <strong>subcategories</strong>, then choose one. Your search stays in place while you change the category; remove any filter with the &times; on its chip, or choose <em>Clear All Filters</em>.</p>
+  <h2>Using a skill</h2>
+  <p>Open <em>Preview</em> to read the full instructions. <em>Copy Instructions</em> copies the text for pasting into your AI assistant; <em>Download</em> saves it as a Markdown (<code>.md</code>) file.{% if download_enabled %} You can also download a whole category, your current search results, or the whole library as a ZIP.{% endif %}</p>
+  <h2>My Favorites</h2>
+  <p>The star saves a skill to <a href="{% url 'favorites' %}">My Favorites</a>. No account is needed, so favorites are stored <strong>in this browser only</strong>: they are not shared and do not follow you to another device or browser, and clearing the browser's site data removes them. If a saved skill is later unpublished it simply disappears from the list.</p>
+  <h2>Keyboard and accessibility</h2>
+  <p>Everything works from the keyboard: Tab moves between controls, Enter or Space opens a category group, and Esc closes the filter panel on small screens.</p>
+  <h2>Something missing?</h2>
+  <p>Skills are added by the Datacense team. If you cannot find what you need, contact your Datacense administrator.</p>
+</div>
+{% endblock %}

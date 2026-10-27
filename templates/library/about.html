@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}About - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section prose">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="{% url 'home' %}">Home</a> &rsaquo; <span aria-current="page">About</span></nav>
+  <h1>About the AI Skill Library</h1>
+  <p>{{ site_settings.intro_text }}</p>
+  <p>The Datacense AI Skill Library is a collection of written skills - step-by-step instructions you can give to an AI assistant to get a task done well. {% if skill_total %}It currently contains <strong>{{ skill_total }}</strong> published skill{{ skill_total|pluralize }}.{% endif %}</p>
+  <p>Skills are grouped by major domain and subcategory, and each one is a plain Markdown file you can read, copy or download. Skills are maintained by Datacense administrators; draft and archived skills are never shown here.</p>
+  <p><a class="btn primary" href="{% url 'skill_list' %}">Explore Skills</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "dashboard/base_admin.html" %}
+{% block title %}Import Skills - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section">
+  <ol class="steps" aria-label="Import steps"><li class="on" aria-current="step">Upload</li><li>Analyze</li><li>Review</li><li>Import</li><li>Results</li></ol>
+  <div class="page-head"><h1>Import Skills</h1></div>
+  <p class="muted">Upload several Markdown files or a ZIP of skills (JSON exports also work). We analyse them first and show a review page - nothing is saved until you confirm. New imports default to Draft.</p>
+  <form method="post" enctype="multipart/form-data" id="import-form">
+    {% csrf_token %}
+    <label class="dropzone" id="dropzone" for="import-files">
+      <strong>Drag files here or click to choose</strong><br>
+      <span class="muted small">.md &middot; .zip &middot; .json</span>
+      <input id="import-files" type="file" name="files" multiple accept=".md,.zip,.json,.txt">
+      <div id="file-names" class="mt small" aria-live="polite"></div>
+    </label>
+    <div id="upload-progress" class="mt" hidden><progress id="upload-bar" max="100" value="0"></progress> <span id="upload-text" class="small">Uploading...</span></div>
+    <div class="mt"><button class="btn primary" type="submit" id="import-submit">Analyse files</button></div>
+  </form>
+  <div class="paper mt">
+    <h2>How import works</h2>
+    <ul>
+      <li>Folders in a ZIP become categories; otherwise the guide's own <em>Domain</em> line is used. You can change every category before saving.</li>
+      <li>A folder containing <code>SKILL.md</code> is a skill package: its other files are kept as supporting files.</li>
+      <li>Duplicates (same content, reference, slug or title) are skipped unless you choose Replace or Import as new.</li>
+      <li>Unsafe paths, system files, oversized or encrypted entries are rejected and listed. Nothing in a file is ever run.</li>
+      <li>Limits: {{ max_upload_mb }} MB per upload, {{ max_files }} files and {{ max_unzipped_mb }} MB unpacked per ZIP.</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

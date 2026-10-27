@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% load static %}{% static 'img/icons.svg' as ic %}
+{% block title %}My Favorites - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="{% url 'home' %}">Home</a> &rsaquo; <span aria-current="page">My Favorites</span></nav>
+  <div class="page-head"><div><h1>My Favorites <span class="number" data-fav-count>0</span></h1>
+    <p class="muted">Saved in <strong>this browser only</strong> - no account needed, so they do not follow you to another device or browser. Favorites are kept for later; use <a href="{% url 'collection' %}">My Collection</a> to gather skills for a combined download.</p></div></div>
+  <noscript><p class="notice">Favorites need JavaScript. You can still <a href="{% url 'skill_list' %}">browse all skills</a>.</p></noscript>
+  <div id="fav-missing" class="notice" hidden><span id="fav-missing-text"></span> <button type="button" class="btn slim" id="fav-prune">Remove them from favorites</button></div>
+  <div id="fav-tools" class="manage-bar" hidden>
+    <label class="checkline"><input type="checkbox" id="fav-all"> Select All Favorites</label>
+    <button type="button" class="btn slim" id="fav-remove-selected" disabled>Remove Selected (<span id="fav-sel-n">0</span>)</button>
+    <button type="button" class="btn slim" id="fav-add-selected" disabled>Add Selected to Collection</button>
+    <button type="button" class="btn slim" id="fav-add-all">Add All to Collection</button>
+    <button type="button" class="btn slim danger" id="fav-clear">Clear All Favorites</button>
+    <span class="grow"></span>
+    <form method="post" action="{% url 'favorites_download' %}" data-favorites-form>{% csrf_token %}<input type="hidden" name="slugs" value="">
+      <button class="btn primary" type="submit"><svg class="icon" aria-hidden="true"><use href="{{ ic }}#download"/></svg> Download All Favorites as ZIP</button></form>
+  </div>
+  <div class="empty" id="fav-empty" hidden><h2>No favorites yet</h2><p>Use the &#9734; star on any skill to keep it here.</p><a class="btn primary" href="{% url 'skill_list' %}">Explore Skills</a></div>
+  <ul class="cards" id="fav-list" data-url="{% url 'favorites_cards' %}" aria-live="polite"></ul>
+</div>
+{% endblock %}

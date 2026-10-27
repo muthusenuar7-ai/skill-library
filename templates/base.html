@@ -1,0 +1,71 @@
+{% load static %}{% static 'img/icons.svg' as ic %}<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ SITE_NAME }}{% endblock %}</title>
+<meta name="collection-limit" content="{{ COLLECTION_MAX }}">
+<meta name="collection-check-url" content="{% url 'collection_check' %}">
+<meta name="description" content="{% block description %}Practical, ready-to-use AI skills for everyday work - search, preview, copy and download.{% endblock %}">
+<link rel="icon" href="{% static 'img/favicon.png' %}" type="image/png" sizes="64x64">
+<link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
+<link rel="stylesheet" href="{% static 'css/app.css' %}">
+{% block head %}{% endblock %}
+</head>
+<body>
+<a class="skip" href="#main">Skip to main content</a>
+{% block header %}
+{% with n=request.resolver_match.url_name %}
+<header class="site-header">
+  <div class="top">
+    <a class="brand" href="{% url 'home' %}" aria-label="Datacense AI Skill Library - home">{% include "_brand_logo.html" %}<span class="brand-sub">AI Skill Library</span></a>
+    <a class="cart-chip" href="{% url 'collection' %}" aria-label="My Collection"><svg class="icon" aria-hidden="true"><use href="{{ ic }}#layers"/></svg><span class="badge-count" data-coll-count>0</span></a>
+    <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="main-nav">Menu</button>
+    <nav class="main-nav" id="main-nav" aria-label="Main">
+      <a href="{% url 'home' %}"{% if n == 'home' %} aria-current="page"{% endif %}>Home</a>
+      <a href="{% url 'skill_list' %}"{% if n == 'skill_list' or n == 'category' or n == 'skill_detail' %} aria-current="page"{% endif %}>Explore Skills</a>
+      <a href="{% url 'categories' %}"{% if n == 'categories' %} aria-current="page"{% endif %}>Categories</a>
+      <a class="nav-collection" href="{% url 'collection' %}"{% if n == 'collection' %} aria-current="page"{% endif %}>My Collection <span class="badge-count" data-coll-count>0</span></a>
+      <a href="{% url 'favorites' %}"{% if n == 'favorites' %} aria-current="page"{% endif %}>My Favorites <span class="badge-count" data-fav-count>0</span></a>
+      <a href="{% url 'help' %}"{% if n == 'help' %} aria-current="page"{% endif %}>Help</a>
+    </nav>
+  </div>
+</header>
+{% endwith %}
+{% endblock %}
+{% if messages %}<div class="wrap"><ul class="messages" role="status">{% for m in messages %}<li class="{{ m.tags }}">{{ m }}</li>{% endfor %}</ul></div>{% endif %}
+<main id="main" tabindex="-1">
+{% block content %}{% endblock %}
+</main>
+{% block footer %}
+<footer class="site-footer">
+  <div class="footer-grid">
+    <div><a class="logo-chip" href="{% url 'home' %}" aria-label="Datacense AI Skill Library - home"><img src="{% static 'img/logo-full.png' %}" alt="Datacense" width="1200" height="184"></a>
+      <p class="mt">Ready-to-use written skills for everyday AI work. Search, preview, copy and download - no account needed.</p></div>
+    <div><h2>Library</h2><ul><li><a href="{% url 'skill_list' %}">Explore Skills</a></li><li><a href="{% url 'categories' %}">Categories</a></li><li><a href="{% url 'favorites' %}">My Favorites</a></li></ul></div>
+    <div><h2>Information</h2><ul><li><a href="{% url 'help' %}">Help</a></li><li><a href="{% url 'about' %}">About</a></li>{% if site_settings.public_library_download_enabled %}<li><a href="{% url 'download_all' %}">Download the library (.zip)</a></li>{% endif %}</ul></div>
+  </div>
+  <div class="footer-base">&copy; {% now "Y" %} {{ COMPANY }} &middot; Skills are written guides - review the results before relying on them.{% if site_settings.footer_note %} &middot; {{ site_settings.footer_note }}{% endif %}</div>
+</footer>
+{% endblock %}
+{% block public_extras %}
+<div class="collection-bar" id="collection-bar" role="region" aria-label="My Collection selection" hidden>
+  <span class="cb-text"><svg class="icon" aria-hidden="true"><use href="{{ ic }}#layers"/></svg> <strong id="cb-count">0</strong> <span id="cb-label">skills selected</span></span>
+  <span class="cb-actions">
+    <a class="btn slim" href="{% url 'collection' %}" aria-label="Review Collection">Review<span class="hide-sm"> Collection</span></a>
+    <form method="post" action="{% url 'collection_download' %}" data-collection-form>{% csrf_token %}<input type="hidden" name="ids" value=""><button class="btn slim primary" type="submit"><svg class="icon" aria-hidden="true"><use href="{{ ic }}#download"/></svg> Download ZIP</button></form>
+    <button type="button" class="btn slim" id="cb-clear">Clear</button>
+  </span>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+<dialog id="confirm-dialog" aria-labelledby="confirm-title">
+  <form method="dialog">
+    <h2 id="confirm-title">Please confirm</h2>
+    <p id="confirm-message"></p>
+    <div class="row end"><button class="btn" value="cancel">Cancel</button><button class="btn primary" value="ok" id="confirm-ok">Confirm</button></div>
+  </form>
+</dialog>
+{% endblock %}
+<script src="{% static 'js/app.js' %}" defer></script>
+</body>
+</html>

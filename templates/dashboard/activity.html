@@ -1,0 +1,79 @@
+{% extends "dashboard/base_admin.html" %}
+{% load library_extras %}
+{% block title %}Activity - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section">
+  <div class="page-head"><div><h1>Activity</h1>{% if not perms.accounts.manage_team %}<p class="muted small">Showing skill and category changes, plus your own sign-ins.</p>{% endif %}</div>
+    {% if can_clear %}<a class="btn" href="{% url 'activity_audit' %}">Security audit trail</a>{% endif %}</div>
+
+  <form class="toolbar" method="get" role="search" aria-label="Filter activity">
+    <div class="filters">
+      <div class="search"><label class="sr-only" for="q">Search activity</label><input id="q" type="search" name="q" value="{{ f.q }}" placeholder="Search description, administrator or action"></div>
+      <label class="sr-only" for="admin">Administrator</label>
+      <select id="admin" name="admin"><option value="">All administrators</option>{% for a in admins %}<option value="{{ a }}"{% if a == f.admin %} selected{% endif %}>{{ a }}</option>{% endfor %}</select>
+      <label class="sr-only" for="action">Activity type</label>
+      <select id="action" name="action"><option value="">All activity types</option>{% for code, label in actions %}<option value="{{ code }}"{% if code == f.action %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+    </div>
+    <div class="filters mt">
+      <label for="date_from" class="inlinelabel">From</label><input id="date_from" class="auto" type="date" name="date_from" value="{{ f.date_from }}" max="{{ today }}">
+      <label for="date_to" class="inlinelabel">To</label><input id="date_to" class="auto" type="date" name="date_to" value="{{ f.date_to }}" max="{{ today }}">
+      {% if can_clear %}<label class="checkline"><input type="checkbox" name="cleared" value="1"{% if show_cleared %} checked{% endif %}> Include cleared records</label>{% endif %}
+      <button class="btn primary" type="submit">Apply filters</button>
+      {% if filtered or show_cleared %}<a class="btn" href="{% url 'activity' %}">Reset</a>{% endif %}
+    </div>
+  </form>
+
+  {% if can_clear %}
+  <details class="paper manage-activity" id="manage-activity">
+    <summary><strong>Manage Activity</strong> <span class="muted small">Super Admin only</span></summary>
+    <p class="small muted mt">Clearing archives records so they leave this list; nothing is physically deleted. <strong>Protected security records are never cleared</strong> - role and account changes, password and sign-in security events, settings changes, exports, and earlier clearing events. Every clearing action is recorded in the <a href="{% url 'activity_audit' %}">security audit trail</a>.</p>
+    <div class="row">
+      <label class="checkline"><input type="checkbox" id="act-select-all"> Select Activity (this page)</label>
+      <button type="button" class="btn slim" data-clear-mode="selected">Clear Selected (<span id="act-sel-n">0</span>)</button>
+      <button type="button" class="btn slim danger" data-clear-mode="all">Clear All</button>
+    </div>
+    <div class="row mt">
+      <label for="act-before" class="inlinelabel">Clear Older Records - before</label>
+      <input id="act-before" class="auto" type="date" max="{{ today }}">
+      <button type="button" class="btn slim" data-clear-mode="older">Clear Older Records</button>
+    </div>
+    <form method="post" action="{% url 'activity_clear' %}" id="clear-form" data-count-url="{% url 'activity_clear_count' %}">
+      {% csrf_token %}<input type="hidden" name="mode" value=""><input type="hidden" name="before" value=""><input type="hidden" name="expected_count" value=""><input type="hidden" name="confirm" value="">
+    </form>
+  </details>
+  {% endif %}
+
+  <p class="minor" role="status"><strong>{{ total }}</strong> record{{ total|pluralize }}{% if filtered %} match your filters{% endif %}.</p>
+  {% if page.object_list %}
+  <div class="table-wrap"><table class="data">
+    <thead><tr>{% if can_clear %}<th class="check"><span class="sr-only">Select</span></th>{% endif %}<th>Date and time</th><th>Administrator</th><th>Action</th><th>Related skill or resource</th><th>Description</th></tr></thead>
+    <tbody>{% for a in page.object_list %}
+      <tr{% if a.archived_at %} class="cleared"{% endif %}>
+        {% if can_clear %}<td class="check">{% if a.is_protected or a.archived_at %}<input type="checkbox" disabled aria-label="{% if a.archived_at %}Already cleared{% else %}Protected security record - cannot be cleared{% endif %}">{% else %}<input type="checkbox" class="act-check" name="ids" value="{{ a.pk }}" form="clear-form" aria-label="Select {{ a.label }} at {{ a.created_at|date:'j M Y H:i' }}">{% endif %}</td>{% endif %}
+        <td class="small">{{ a.created_at|date:"j M Y" }}<br>{{ a.created_at|date:"H:i:s" }}</td>
+        <td>{% if a.admin_name %}<strong>{{ a.admin_name }}</strong><br>{% endif %}<span class="small muted">{{ a.actor_email }}</span></td>
+        <td>{{ a.label }}{% if a.is_protected %} <span class="badge featured" title="Security record: never cleared by Clear All">Protected</span>{% endif %}{% if a.archived_at %} <span class="badge archived">Cleared {{ a.archived_at|date:"j M Y" }}</span>{% endif %}<br><code class="small">{{ a.action }}</code></td>
+        <td>{% if a.related %}{% if a.related_url and perms.library.change_skill %}<a href="{{ a.related_url }}">{{ a.related }}</a>{% else %}{{ a.related }}{% endif %}<br><span class="small muted">{{ a.related_kind }}</span>{% else %}<span class="muted">-</span>{% endif %}</td>
+        <td>{{ a.description }}</td>
+      </tr>{% endfor %}</tbody>
+  </table></div>
+  {% if page.paginator.num_pages > 1 %}<nav class="pager" aria-label="Pages">
+    {% if page.has_previous %}<a class="btn slim" href="{% querystring page=page.previous_page_number %}">&larr; Newer</a>{% endif %}
+    <span class="minor">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a class="btn slim" href="{% querystring page=page.next_page_number %}">Older &rarr;</a>{% endif %}
+  </nav>{% endif %}
+  {% else %}<div class="empty"><h2>{% if filtered %}No activity matches these filters{% else %}No activity recorded yet{% endif %}</h2>{% if filtered %}<a class="btn primary" href="{% url 'activity' %}">Reset filters</a>{% endif %}</div>{% endif %}
+</div>
+
+{% if can_clear %}
+<dialog id="activity-dialog" class="danger-dialog" aria-labelledby="ad-title" aria-describedby="ad-text">
+  <form method="dialog">
+    <p class="danger-kicker">Destructive action</p>
+    <h2 id="ad-title">Clear activity records?</h2>
+    <p id="ad-text"></p>
+    <p class="small muted" id="ad-kept"></p>
+    <div class="row end"><button class="btn" value="cancel">Cancel</button><button class="btn danger-solid" value="ok" id="ad-ok">Clear records</button></div>
+  </form>
+</dialog>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "accounts/auth_base.html" %}
+{% block title %}Link not valid - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="login-card"><div class="empty">
+  <h1>This link is not valid</h1>
+  <p>It may have been used already or it has expired. Ask a Super Admin for a new activation link.</p>
+  <a class="btn" href="{% url 'login' %}">Go to sign in</a>
+</div></div>
+{% endblock %}

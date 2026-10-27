@@ -1,0 +1,47 @@
+{% load static library_extras %}{% static 'img/icons.svg' as ic %}
+<div class="detail">
+  <article>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      {% if back_url %}<a href="{{ back_url }}">&larr; Back to results</a> &middot; {% endif %}
+      <a href="{% url 'skill_list' %}">Explore Skills</a> &rsaquo; <a href="{% url 'category' skill.category.slug %}">{{ skill.category.name }}</a>{% if skill.subcategory %} &rsaquo; <a href="{% url 'category' skill.subcategory.slug %}">{{ skill.subcategory.name }}</a>{% endif %}
+    </nav>
+    <div class="detail-head">
+      <span class="glyph big" aria-hidden="true"><svg class="icon"><use href="{{ ic }}#{{ skill.category.name|domain_icon }}"/></svg></span>
+      <div><h1 class="page-title">{{ skill.title }}</h1>{% if skill.description %}<p class="muted">{{ skill.description }}</p>{% endif %}</div>
+    </div>
+    <div class="row mb">
+      {% if admin_preview %}
+        <a class="btn slim" href="{% url 'skill_download_admin' skill.pk %}">Download Skill</a>
+      {% else %}
+        <a class="btn slim primary" href="{% url 'skill_download' skill.slug %}" download><svg class="icon" aria-hidden="true"><use href="{{ ic }}#download"/></svg> Download Skill</a>
+        {% if skill.attachments.all %}<a class="btn slim" href="{% url 'skill_package_download' skill.slug %}">Download package (.zip)</a>{% endif %}
+        <button type="button" class="btn slim" data-fav="{{ skill.slug }}" aria-pressed="false">&#9734; Add to Favorites</button>
+      {% endif %}
+      <button type="button" class="btn slim" data-copy-target="raw-content">Copy Instructions</button>
+    </div>
+    <div class="paper md">{{ skill.content|markdown_safe }}</div>
+    <pre id="raw-content" hidden>{{ skill.content }}</pre>
+  </article>
+  <aside>
+    <div class="paper">
+      <h2 class="aside-title">About this skill</h2>
+      <ul class="meta-list">
+        <li><strong>Domain:</strong> <a href="{% url 'category' skill.category.slug %}">{{ skill.category.name }}</a></li>
+        {% if skill.subcategory %}<li><strong>Subcategory:</strong> <a href="{% url 'category' skill.subcategory.slug %}">{{ skill.subcategory.name }}</a></li>{% endif %}
+        {% if skill.source_ref %}<li><strong>Reference:</strong> {{ skill.source_ref }}</li>{% endif %}
+        <li><strong>Updated:</strong> {{ skill.updated_at|date:"j M Y" }}</li>
+        {% if admin_preview %}<li><strong>Status:</strong> <span class="badge {{ skill.status }}">{{ skill.get_status_display }}</span></li>{% endif %}
+      </ul>
+      {% if skill.tag_list %}<p class="mt">{% for t in skill.tag_list %}{% if admin_preview %}<span class="tag">{{ t }}</span>{% else %}<a class="tag" href="{% url 'skill_list' %}?tag={{ t|urlencode }}">{{ t }}</a>{% endif %}{% endfor %}</p>{% endif %}
+    </div>
+    {% if skill.attachments.all %}
+    <div class="paper">
+      <h2 class="aside-title">Supporting files</h2>
+      <ul class="meta-list">{% for a in skill.attachments.all %}<li>{% if admin_preview %}<a href="{% url 'attachment_admin' skill.pk a.pk %}">{{ a.path }}</a>{% else %}<a href="{% url 'skill_attachment' skill.slug a.pk %}">{{ a.path }}</a>{% endif %} <span class="muted small">{{ a.size|filesize }}</span></li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+    {% if related %}
+    <div class="paper"><h2 class="aside-title">More in {{ skill.category.name }}</h2><ul class="meta-list">{% for r in related %}<li><a href="{% url 'skill_detail' r.slug %}">{{ r.title }}</a></li>{% endfor %}</ul></div>
+    {% endif %}
+  </aside>
+</div>

@@ -1,0 +1,20 @@
+{% load static library_extras %}{% static 'img/icons.svg' as ic %}<li data-fav-card="{{ s.slug }}" data-id="{{ s.pk }}">
+  <article class="card">
+    <div class="cardtop">
+      {% if fav_manage %}<label class="pick"><input type="checkbox" class="fav-check" data-fav-select="{{ s.slug }}"><span class="sr-only">Select {{ s.title }} for bulk actions</span></label>{% endif %}
+      <span class="glyph" aria-hidden="true"><svg class="icon"><use href="{{ ic }}#{{ s.category.name|domain_icon }}"/></svg></span>
+      <button type="button" class="fav" data-fav="{{ s.slug }}" aria-pressed="false" aria-label="Save {{ s.title }} to My Favorites">&#9734;</button>
+    </div>
+    <div class="crumb-line"><a class="pill" href="{% url 'category' s.category.slug %}">{{ s.category.name }}</a>{% if s.subcategory %}<span aria-hidden="true">&rsaquo;</span><span>{{ s.subcategory.name }}</span>{% endif %}{% if s.is_featured %}<span class="pill gold">Featured</span>{% endif %}</div>
+    <h3><a href="{% url 'skill_detail' s.slug %}{% if back_qs %}?back={{ back_qs|urlencode }}{% endif %}">{{ s.title }}</a></h3>
+    <p class="desc">{{ s.description|truncatechars:170 }}</p>
+    {% with tags=s.tag_list %}{% if tags %}<div>{% for t in tags|slice:":3" %}<a class="tag" href="{% url 'skill_list' %}?tag={{ t|urlencode }}">{{ t }}</a>{% endfor %}</div>{% endif %}{% endwith %}
+    <div class="cardfoot">
+      <label class="collect" title="Add to My Collection"><input type="checkbox" data-collect="{{ s.pk }}" data-title="{{ s.title }}"><span class="collect-text"><svg class="icon" aria-hidden="true"><use href="{{ ic }}#layers"/></svg> <span class="ct">Add to Collection</span></span></label>
+      <span class="buttons">
+        <a class="mini" href="{% url 'skill_detail' s.slug %}{% if back_qs %}?back={{ back_qs|urlencode }}{% endif %}" aria-label="Preview {{ s.title }}">Preview</a>
+        <a class="mini dark" href="{% url 'skill_download' s.slug %}" download aria-label="Download {{ s.title }} as Markdown"><svg class="icon" aria-hidden="true"><use href="{{ ic }}#download"/></svg> Download</a>
+      </span>
+    </div>
+  </article>
+</li>

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% load static library_extras %}{% static 'img/icons.svg' as ic %}
+{% block title %}{{ heading }} - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="explore">
+  <div class="filters-backdrop" id="filters-backdrop"></div>
+  <aside class="filters-panel" id="filters-panel" aria-label="Filter skills by domain and subcategory">
+    <div class="filters-head"><h2>Categories</h2>
+      <button type="button" class="btn slim filters-close" id="filters-close" aria-label="Close filters"><svg class="icon" aria-hidden="true"><use href="{{ ic }}#close"/></svg></button></div>
+    <div class="tree-tools" id="tree-tools" hidden><button type="button" class="btn slim" data-tree="open">Expand all</button> <button type="button" class="btn slim" data-tree="close">Collapse all</button></div>
+    <div class="cat-search" id="cat-search-wrap" hidden><label class="sr-only" for="cat-search">Search categories</label><input type="search" id="cat-search" placeholder="Search categories..." autocomplete="off"></div>
+    <ul class="tree" id="tree">
+      <li><a class="all{% if not f.domain %} is-current{% endif %}" href="{{ clear_url }}"{% if not f.domain %} aria-current="true"{% endif %}><span>All Skills</span><span class="number">{{ all_total }}</span></a></li>
+      {% for d in tree %}
+      <li class="dom{% if d.is_current %} is-current{% endif %}" data-search="{{ d.name|lower }}{% for s in d.subs %} {{ s.name|lower }}{% endfor %}">
+        <details{% if d.is_current %} open{% endif %}>
+          <summary><span class="name"><svg class="icon" aria-hidden="true"><use href="{{ ic }}#chevron"/></svg>{{ d.name }}</span><span class="number">{{ d.published_total }}</span></summary>
+          <ul class="sublist">
+            <li><a href="{{ d.url }}"{% if d.is_current and not f.sub %} class="is-current" aria-current="true"{% endif %}><span>All in {{ d.name }}</span><span class="number">{{ d.published_total }}</span></a></li>
+            {% for s in d.subs %}<li><a href="{{ s.url }}"{% if s.is_current %} class="is-current" aria-current="true"{% endif %}><span>{{ s.name }}</span><span class="number">{{ s.published_total }}</span></a></li>{% endfor %}
+          </ul>
+        </details>
+      </li>{% endfor %}
+    </ul>
+    <p class="help pad" id="cat-none" hidden>No category matches.</p>
+  </aside>
+
+  <section aria-labelledby="results-h">
+    <div class="results-head">
+      <nav class="crumbs" aria-label="Breadcrumb"><a href="{% url 'home' %}">Home</a> &rsaquo; <a href="{{ clear_url }}">Explore Skills</a>{% if f.domain %} &rsaquo; {% if f.sub %}<a href="{{ f.domain.get_absolute_url }}">{{ f.domain.name }}</a>{% else %}<span aria-current="page">{{ f.domain.name }}</span>{% endif %}{% endif %}{% if f.sub %} &rsaquo; <span aria-current="page">{{ f.sub.name }}</span>{% endif %}</nav>
+      <h1 id="results-h" class="page-title">{{ heading }}</h1>
+      <form method="get" action="{% url 'skill_list' %}" role="search" id="explore-form">
+        {% if f.domain %}<input type="hidden" name="domain" value="{{ f.domain.slug }}">{% endif %}
+        {% if f.sub %}<input type="hidden" name="sub" value="{{ f.sub.slug }}">{% endif %}
+        {% if f.tag %}<input type="hidden" name="tag" value="{{ f.tag }}">{% endif %}
+        {% if f.view == 'list' %}<input type="hidden" name="view" value="list">{% endif %}
+        <div class="explore-search">
+          <div class="field-wrap"><svg class="icon" aria-hidden="true"><use href="{{ ic }}#search"/></svg>
+            <label class="sr-only" for="q">Search skills{% if f.sub %} in {{ f.sub.name }}{% elif f.domain %} in {{ f.domain.name }}{% endif %}</label>
+            <input id="q" type="search" name="q" value="{{ f.q }}" maxlength="100" placeholder="Search skills, topics, tools, or workflows..." autocomplete="off"></div>
+          <button class="btn primary" type="submit">Search</button>
+        </div>
+        <div class="results-bar mt">
+          <div class="controls">
+            <button type="button" class="btn slim filter-toggle" id="filters-open" aria-controls="filters-panel" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="{{ ic }}#filter"/></svg> Filters</button>
+            <span class="minor" role="status" aria-live="polite"><strong>{{ total }}</strong> skill{{ total|pluralize }} found</span>
+          </div>
+          <div class="controls">
+            <label class="sr-only" for="sort">Sort by</label>
+            <select id="sort" name="sort" data-autosubmit>{% for v, label in sort_options %}<option value="{{ v }}"{% if f.sort == v %} selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            <span class="viewtoggle" role="group" aria-label="Results layout">
+              <a href="{{ view_urls.grid }}" aria-label="Grid view"{% if f.view == 'grid' %} aria-current="true"{% endif %}><svg class="icon" aria-hidden="true"><use href="{{ ic }}#grid"/></svg></a>
+              <a href="{{ view_urls.list }}" aria-label="List view"{% if f.view == 'list' %} aria-current="true"{% endif %}><svg class="icon" aria-hidden="true"><use href="{{ ic }}#list"/></svg></a>
+            </span>
+          </div>
+        </div>
+      </form>
+      {% if chips %}
+      <div class="chip-row" aria-label="Active filters">
+        {% for c in chips %}<span class="fchip"><small>{{ c.kind }}</small> {{ c.label }}<a href="{{ c.remove }}" aria-label="Remove {{ c.kind|lower }} filter {{ c.label }}"><svg class="icon" aria-hidden="true"><use href="{{ ic }}#close"/></svg></a></span>{% endfor %}
+        <a class="clear-all" href="{{ clear_url }}">Clear All Filters</a>
+        {% if total %}<a class="clear-all" href="{% url 'download_selection' %}?{{ selection_qs }}" rel="nofollow">Download these {{ total }} (.zip)</a>{% endif %}
+      </div>
+      {% endif %}
+    </div>
+
+    {% if page.object_list %}
+      <div class="selectbar" id="selectbar" data-match-url="{% url 'collection_match' %}?{{ selection_qs }}" role="group" aria-label="Add skills to My Collection" hidden>
+        <button type="button" class="btn slim" id="sel-page">Select All on This Page</button>
+        <button type="button" class="btn slim" id="sel-page-none">Deselect All on This Page</button>
+        <button type="button" class="btn slim" id="sel-match">Select All Matching Results ({{ total }})</button>
+        <span class="minor">&ldquo;This page&rdquo; = the {{ page.object_list|length }} skills shown. &ldquo;Matching&rdquo; = all {{ total }} results of your search and filters (up to {{ COLLECTION_MAX }} per collection).</span>
+      </div>
+      <ul class="cards{% if f.view == 'list' %} list{% endif %}">{% for s in page.object_list %}{% include "library/_card.html" %}{% endfor %}</ul>
+      {% if page.paginator.num_pages > 1 %}
+      <nav class="pager" aria-label="Pages">
+        {% if page.has_previous %}<a class="btn slim" href="{% querystring page=page.previous_page_number %}">&larr; Previous</a>{% endif %}
+        <span class="minor">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+        {% if page.has_next %}<a class="btn slim" href="{% querystring page=page.next_page_number %}">Next &rarr;</a>{% endif %}
+      </nav>
+      {% endif %}
+    {% else %}
+      <div class="empty"><h2>No skills match these filters</h2><p>Try different keywords, remove a filter, or start again from all skills.</p><a class="btn primary" href="{{ clear_url }}">Clear Filters</a></div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

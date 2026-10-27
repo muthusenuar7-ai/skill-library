@@ -1,0 +1,6 @@
+{% extends "dashboard/base_admin.html" %}
+{% block title %}Preview: {{ skill.title }} - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="preview-banner">Management preview &middot; status: {{ skill.get_status_display }} &middot; <a href="{% url 'skill_edit' skill.pk %}">Edit</a> &middot; <a href="{% url 'manage_skills' %}">Back to Manage Skills</a></div>
+{% include "library/_skill_body.html" with admin_preview=True %}
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends "dashboard/base_admin.html" %}
+{% block title %}Review import - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section">
+  <ol class="steps" aria-label="Import steps"><li>Upload</li><li>Analyze</li><li class="on" aria-current="step">Review</li><li>Import</li><li>Results</li></ol>
+  <div class="page-head"><h1>Review import</h1></div>
+  <div class="stat-grid">
+    <div class="stat-card"><b>{{ candidates|length }}</b><span>Skills found</span></div>
+    <div class="stat-card ok"><b>{{ ready }}</b><span>Ready to import</span></div>
+    <div class="stat-card warn"><b>{{ dups }}</b><span>Conflicts</span></div>
+    <div class="stat-card"><b>{{ new_cats|length }}</b><span>New categories</span></div>
+    <div class="stat-card"><b>{{ support_total }}</b><span>Supporting files</span></div>
+    <div class="stat-card"><b>{{ bad_total }}</b><span>Invalid</span></div>
+  </div>
+
+  {% if fatal %}<div class="notice error" role="alert"><strong>Could not use:</strong><ul>{% for n, r in fatal %}<li>{{ n }} &ndash; {{ r }}</li>{% endfor %}</ul></div>{% endif %}
+  {% if rejected %}<details class="notice" open><summary><strong>{{ rejected|length }} invalid or unsafe entr{{ rejected|length|pluralize:"y,ies" }}</strong> (not imported)</summary><ul>{% for p, r in rejected %}<li><code>{{ p }}</code> &ndash; {{ r }}</li>{% endfor %}</ul></details>{% endif %}
+  {% if ignored %}<details class="notice info"><summary>{{ ignored|length }} file{{ ignored|length|pluralize }} ignored (not skills)</summary><ul>{% for p, r in ignored %}<li><code>{{ p }}</code> &ndash; {{ r }}</li>{% endfor %}</ul></details>{% endif %}
+  {% if new_cats %}<p class="notice info">New major domains will be created: <strong>{{ new_cats|join:", " }}</strong>. {% if new_subs %}New subcategories: <strong>{{ new_subs|join:", " }}</strong>. {% endif %}Correct any domain or subcategory below before importing.</p>{% elif new_subs %}<p class="notice info">New subcategories will be created: <strong>{{ new_subs|join:", " }}</strong>.</p>{% endif %}
+
+  {% if candidates %}
+  <form method="post" id="review-form">
+    {% csrf_token %}
+    <div class="paper mb row spread">
+      <fieldset class="statusset"><legend class="inlinelabel">Save imported skills as</legend>
+        <label class="checkline"><input type="radio" name="status" value="draft" checked> Draft (private, recommended)</label>
+        {% if perms.library.publish_skill %}<label class="checkline"><input type="radio" name="status" value="published"> Published (visible to everyone)</label>{% endif %}
+      </fieldset>
+      {% if dups %}<button type="button" class="btn slim" id="skip-dups">Skip all conflicts</button>{% endif %}
+    </div>
+    <datalist id="sub-list">{% for sc in subcategories %}<option value="{{ sc.name }}">{{ sc.parent.name }}</option>{% endfor %}</datalist>
+    <datalist id="cat-list">{% for c in categories %}<option value="{{ c.name }}">{% endfor %}</datalist>
+    {% for c in candidates %}
+    <div class="import-item{% if c.dup %} dup{% endif %}{% if c.errors %} bad{% endif %}">
+      <div class="cols">
+        <div>
+          <label for="title_{{ c.key }}">Title</label>
+          <input type="text" id="title_{{ c.key }}" name="title_{{ c.key }}" value="{{ c.title }}" maxlength="200">
+          <p class="small muted mt">From <code>{{ c.source }}</code> &middot; slug <code>{{ c.slug }}</code>{% if c.source_ref %} &middot; ref {{ c.source_ref }}{% endif %}</p>
+          {% if c.description %}<p class="small">{{ c.description|truncatechars:200 }}</p>{% endif %}
+          <div class="flags">
+            {% if c.errors %}<span class="badge archived">Invalid: {{ c.errors|join:", " }}</span>{% endif %}
+            {% for k in c.kinds %}<span class="badge draft">Duplicate {{ k }}</span>{% endfor %}
+            <span class="badge {% if c.cat_exists %}exists{% else %}new{% endif %}">{% if c.cat_exists %}Existing domain{% else %}New domain{% endif %}</span>{% if c.subcategory %}<span class="badge {% if c.sub_exists %}exists{% else %}new{% endif %}">{% if c.sub_exists %}Existing subcategory{% else %}New subcategory{% endif %}</span>{% endif %}
+            {% if c.attachments %}<span class="badge featured">{{ c.attachments|length }} supporting file{{ c.attachments|length|pluralize }}</span>{% endif %}
+          </div>
+          {% if c.dup %}<p class="small">Matches &ldquo;{{ c.dup.existing_title }}&rdquo;{% if c.dup.existing_status %} ({{ c.dup.existing_status }}){% endif %} &ndash; {{ c.dup.kind }}.</p>{% endif %}
+          {% if c.attachments %}<p class="small muted">Files: {% for a in c.attachments %}{{ a.path }}{% if not forloop.last %}, {% endif %}{% endfor %}</p>{% endif %}
+        </div>
+        <div>
+          <label for="category_{{ c.key }}">Major domain</label>
+          <input type="text" id="category_{{ c.key }}" name="category_{{ c.key }}" value="{{ c.category }}" list="cat-list" maxlength="120">
+          <label for="subcategory_{{ c.key }}" class="mt">Subcategory</label>
+          <input type="text" id="subcategory_{{ c.key }}" name="subcategory_{{ c.key }}" value="{{ c.subcategory }}" list="sub-list" maxlength="120" placeholder="(none)">
+          {% if c.tags %}<p class="small muted mt">Tags: {{ c.tags }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="action_{{ c.key }}">Action</label>
+          {% if c.errors %}<select id="action_{{ c.key }}" disabled><option>Cannot import</option></select>
+          {% else %}
+          <select id="action_{{ c.key }}" name="action_{{ c.key }}"{% if c.dup %} data-dup="1"{% endif %}>
+            {% if not c.dup %}<option value="import" selected>Import</option>{% endif %}
+            <option value="skip"{% if c.dup %} selected{% endif %}>Skip</option>
+            {% if c.dup %}{% if c.dup.existing_id %}<option value="replace">Replace existing</option>{% endif %}<option value="rename">Rename (keep both)</option>{% endif %}
+          </select>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    <div class="row mt">
+      <button class="btn primary" type="submit" id="review-submit">Import selected skills</button>
+      <button class="btn" type="submit" name="cancel" value="1" formnovalidate>Cancel import</button>
+    </div>
+  </form>
+  {% else %}
+  <div class="empty"><h2>Nothing to import</h2><p>No usable skills were found.</p><a class="btn primary" href="{% url 'import_skills' %}">Try again</a></div>
+  {% endif %}
+</div>
+{% endblock %}

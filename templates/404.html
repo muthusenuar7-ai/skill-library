@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Not found - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section"><div class="empty">
+  <h1>We could not find that page</h1>
+  <p>The skill may have been unpublished or the address may be wrong.</p>
+  <a class="btn primary" href="{% url 'skill_list' %}">Browse all skills</a>
+</div></div>
+{% endblock %}

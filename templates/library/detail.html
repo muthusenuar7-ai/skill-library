@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block title %}{{ skill.title }} - {{ SITE_NAME }}{% endblock %}
+{% block description %}{{ skill.description|truncatechars:150 }}{% endblock %}
+{% block content %}{% include "library/_skill_body.html" %}{% endblock %}

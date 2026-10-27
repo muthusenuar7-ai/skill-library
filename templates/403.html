@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Not allowed - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section"><div class="empty">
+  <h1>You do not have permission to do that</h1>
+  <p>Your account is not allowed to open this page. If you think this is a mistake, ask a Super Admin.</p>
+  <a class="btn primary" href="{% url 'home' %}">Back to the Skill Library</a>
+</div></div>
+{% endblock %}

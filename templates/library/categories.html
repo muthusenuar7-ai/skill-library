@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load static library_extras %}{% static 'img/icons.svg' as ic %}
+{% block title %}Categories - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="{% url 'home' %}">Home</a> &rsaquo; <span aria-current="page">Categories</span></nav>
+  <div class="page-head"><div><h1>Categories</h1><p class="muted">Every major domain and its subcategories, with the number of published skills.</p></div></div>
+  {% if tree %}
+  <div class="cat-filter" role="search" id="cat-filter-form" hidden>
+    <div class="explore-search"><div class="field-wrap"><svg class="icon" aria-hidden="true"><use href="{{ ic }}#search"/></svg>
+      <label class="sr-only" for="cat-filter">Search domains and subcategories</label>
+      <input id="cat-filter" type="search" placeholder="Search domains and subcategories..." autocomplete="off"></div>
+      <button type="button" class="btn slim" id="cat-filter-clear" hidden>Clear search</button></div>
+    <p class="minor" id="cat-filter-status" role="status" aria-live="polite"></p>
+  </div>
+  <div class="domain-grid cat-grid" id="cat-grid">{% for d in tree %}
+    <section class="cat-card" aria-label="{{ d.name }}" data-name="{{ d.name|lower }}">
+      <a class="subcategory-link domain-row" href="{% url 'category' d.slug %}" aria-label="{{ d.name }}, {{ d.published_total }} skills - show all">
+        <span class="row-main"><span class="ico" aria-hidden="true"><svg class="icon"><use href="{{ ic }}#{{ d.name|domain_icon }}"/></svg></span><span class="domain-name">{{ d.name }}</span></span>
+        <span class="row-meta"><span class="number">{{ d.published_total }}</span><svg class="icon arrow" aria-hidden="true"><use href="{{ ic }}#arrow"/></svg></span>
+      </a>
+      {% if d.description %}<p class="small muted desc-line">{{ d.description|truncatechars:120 }}</p>{% endif %}
+      {% if d.subs %}<ul class="sub-rows" aria-label="Subcategories of {{ d.name }}">{% for s in d.subs %}
+        <li data-name="{{ s.name|lower }}"><a class="subcategory-link" href="{% url 'category' s.slug %}"><span>{{ s.name }}</span><span class="row-meta"><span class="number">{{ s.published_total }}</span><svg class="icon arrow" aria-hidden="true"><use href="{{ ic }}#arrow"/></svg></span></a></li>{% endfor %}
+      </ul>{% endif %}
+    </section>{% endfor %}
+  </div>
+  <div class="empty" id="cat-empty" hidden><h2>No domains or subcategories match</h2><p>Check the spelling or try a shorter word.</p><button type="button" class="btn primary" id="cat-empty-clear">Clear search</button></div>
+  {% else %}<div class="empty"><h2>No categories yet</h2><p>Categories appear once skills are published.</p></div>{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "dashboard/base_admin.html" %}
+{% block title %}Import summary - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section">
+  <ol class="steps" aria-label="Import steps"><li>Upload</li><li>Analyze</li><li>Review</li><li>Import</li><li class="on" aria-current="step">Results</li></ol>
+  <h1>Import results</h1>
+  <div class="stat-grid">
+    <div class="stat-card"><b>{{ result.created|length }}</b><span>Created</span></div>
+    <div class="stat-card"><b>{{ result.replaced|length }}</b><span>Replaced</span></div>
+    <div class="stat-card"><b>{{ result.skipped|length }}</b><span>Skipped</span></div>
+    <div class="stat-card"><b>{{ result.errors|length }}</b><span>Errors</span></div>
+    <div class="stat-card"><b>{{ result.categories_created|length }}</b><span>New categories</span></div>
+  </div>
+  <p>Saved as <strong>{{ status }}</strong>. Successful items were kept even where others failed.</p>
+  {% if result.errors %}<div class="notice error" role="alert"><strong>Not imported because of errors:</strong><ul>{% for t, m in result.errors %}<li>{{ t }} - {{ m }}</li>{% endfor %}</ul></div>{% endif %}
+  {% if result.categories_created %}<p>New categories: {{ result.categories_created|join:", " }}</p>{% endif %}
+  {% if result.created or result.replaced %}<div class="paper"><ul class="meta-list">{% for t, s in result.created %}<li>Created: {{ t }}</li>{% endfor %}{% for t, s in result.replaced %}<li>Replaced: {{ t }}</li>{% endfor %}</ul></div>{% endif %}
+  <div class="row mt"><a class="btn primary" href="{% url 'manage_skills' %}">Manage Skills</a><a class="btn" href="{% url 'import_skills' %}">Import more</a></div>
+</div>
+{% endblock %}

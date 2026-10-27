@@ -1,0 +1,10 @@
+{% extends "dashboard/base_admin.html" %}
+{% block title %}Edit category - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section narrow">
+  <p class="crumbs"><a href="{% url 'manage_categories' %}">&larr; Categories</a></p>
+  <h1>Edit {{ category.name }}</h1>
+  <form method="post" novalidate>{% csrf_token %}{% include "dashboard/_category_fields.html" %}
+    <div class="row"><button class="btn primary" type="submit">Save</button><a class="btn" href="{% url 'manage_categories' %}">Cancel</a></div></form>
+</div>
+{% endblock %}

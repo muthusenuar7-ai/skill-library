@@ -1,0 +1,31 @@
+{% extends "dashboard/base_admin.html" %}
+{% block title %}Categories - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section">
+  <div class="page-head"><h1>Categories</h1></div>
+  <div class="grid-2 wide-left">
+    <div class="table-wrap"><table class="data">
+      <thead><tr><th>Major domain / subcategory</th><th>Order</th><th>Skills</th><th>Visible</th><th></th></tr></thead>
+      <tbody>{% for c in categories %}<tr>
+        <td><strong>{{ c.name }}</strong><br><span class="muted small">{{ c.slug }}</span></td>
+        <td>{{ c.display_order }}</td><td>{{ c.live }} published / {{ c.total }}</td>
+        <td>{% if c.is_active %}Yes{% else %}<span class="badge archived">Hidden</span>{% endif %}</td>
+        <td>{% if perms.library.change_category %}<a class="btn small" href="{% url 'category_edit' c.pk %}">Edit</a>{% endif %}</td>
+      </tr>
+      {% for s in c.children.all %}<tr>
+        <td><span class="muted" aria-hidden="true">&nbsp;&nbsp;&boxur;</span> {{ s.name }}<br><span class="muted small">{{ s.slug }}</span></td>
+        <td>{{ s.display_order }}</td><td>{{ s.live }} published / {{ s.total }}</td>
+        <td>{% if s.is_active %}Yes{% else %}<span class="badge archived">Hidden</span>{% endif %}</td>
+        <td>{% if perms.library.change_category %}<a class="btn small" href="{% url 'category_edit' s.pk %}">Edit</a>{% endif %}</td>
+      </tr>{% endfor %}
+      {% empty %}<tr><td colspan="5">No categories yet.</td></tr>{% endfor %}</tbody>
+    </table></div>
+    {% if perms.library.add_category %}
+    <div class="paper">
+      <h2>Add category</h2>
+      <p class="help">Two levels: a major domain, optionally with subcategories. Categories are never deleted; untick &ldquo;Active&rdquo; to hide one from the public.</p>
+      <form method="post" novalidate>{% csrf_token %}{% include "dashboard/_category_fields.html" %}<button class="btn primary" type="submit">Add category</button></form>
+    </div>{% endif %}
+  </div>
+</div>
+{% endblock %}

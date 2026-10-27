@@ -1,0 +1,7 @@
+{% if form.non_field_errors %}<div class="notice error" role="alert">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+<div class="field"><label for="{{ form.name.id_for_label }}">Name</label>{{ form.name }}{{ form.name.errors }}</div>
+<div class="field"><label for="{{ form.parent.id_for_label }}">{{ form.parent.label }}</label>{{ form.parent }}<div class="help">{{ form.parent.help_text }}</div>{{ form.parent.errors }}</div>
+<div class="field"><label for="{{ form.slug.id_for_label }}">Slug</label>{{ form.slug }}<div class="help">{{ form.slug.help_text }}</div>{{ form.slug.errors }}</div>
+<div class="field"><label for="{{ form.description.id_for_label }}">Description</label>{{ form.description }}{{ form.description.errors }}</div>
+<div class="field"><label for="{{ form.display_order.id_for_label }}">Display order</label>{{ form.display_order }}{{ form.display_order.errors }}</div>
+<div class="field"><label class="checkline">{{ form.is_active }} Active (visible to the public)</label></div>

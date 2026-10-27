@@ -1,0 +1,23 @@
+{% extends "dashboard/base_admin.html" %}
+{% block title %}Security audit trail - {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="wrap section">
+  <p class="crumbs"><a href="{% url 'activity' %}">&larr; Activity</a></p>
+  <div class="page-head"><div><h1>Security audit trail</h1><p class="muted">Every time activity history was cleared: who did it, when, which option, and how many records. This list is permanent - no screen or button can clear or edit it.</p></div></div>
+  {% if page.object_list %}
+  <div class="table-wrap"><table class="data">
+    <thead><tr><th>Date and time</th><th>Super Admin</th><th>Clearing action</th><th>Records cleared</th><th>Protected kept</th><th>Details</th></tr></thead>
+    <tbody>{% for a in page.object_list %}<tr>
+      <td class="small">{{ a.created_at|date:"j M Y H:i:s" }}</td>
+      <td>{% if a.actor and a.actor.full_name %}<strong>{{ a.actor.full_name }}</strong><br>{% endif %}<span class="small muted">{{ a.actor_email }}</span></td>
+      <td>{{ a.get_action_display }}</td><td><strong>{{ a.records_affected }}</strong></td><td>{{ a.protected_kept }}</td><td class="small">{{ a.detail }}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  {% if page.paginator.num_pages > 1 %}<nav class="pager" aria-label="Pages">
+    {% if page.has_previous %}<a class="btn slim" href="?page={{ page.previous_page_number }}">&larr; Newer</a>{% endif %}
+    <span class="minor">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+    {% if page.has_next %}<a class="btn slim" href="?page={{ page.next_page_number }}">Older &rarr;</a>{% endif %}
+  </nav>{% endif %}
+  {% else %}<div class="empty"><h2>Activity has never been cleared</h2></div>{% endif %}
+</div>
+{% endblock %}
