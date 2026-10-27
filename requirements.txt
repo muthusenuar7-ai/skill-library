@@ -3,3 +3,5 @@ markdown>=3.7,<4
 nh3>=0.2.18
 whitenoise>=6.7,<7
 gunicorn>=22.0; sys_platform != "win32"
+psycopg[binary]>=3.2,<4
+vercel-blob==0.5.0

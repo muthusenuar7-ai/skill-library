@@ -13,12 +13,11 @@ entries are read into memory (with size caps) and attachments are stored under g
 import io
 import json
 import re
-import shutil
 import stat
 import time
 import uuid
 import zipfile
-from pathlib import Path, PurePosixPath
+from pathlib import PurePosixPath
 
 from django.conf import settings
 from django.core.files.base import ContentFile
@@ -473,54 +472,75 @@ def analyse_uploads(uploads, allow_html=False):
 
 
 # ----------------------------------------------------------------------------- staging (admin UI)
-def stage_dir(token=None):
-    root = Path(settings.PRIVATE_MEDIA_ROOT) / "imports"
-    return root if token is None else root / token
+def _stage_manifest(token):
+    try:
+        with get_private_storage().open(f"imports/{token}/manifest.json", "rb") as file:
+            return json.load(file)
+    except FileNotFoundError:
+        return None
 
 
 def cleanup_old_stages(max_age_hours=24):
-    root = stage_dir()
-    if not root.exists():
+    storage = get_private_storage()
+    try:
+        directories, _ = storage.listdir("imports")
+    except FileNotFoundError:
         return
-    for d in root.iterdir():
-        if d.is_dir() and time.time() - d.stat().st_mtime > max_age_hours * 3600:
-            shutil.rmtree(d, ignore_errors=True)
+    for token in directories:
+        if STAGE_RE.fullmatch(token):
+            manifest = _stage_manifest(token)
+            if manifest and time.time() - manifest.get("created_at", time.time()) > max_age_hours * 3600:
+                discard_stage(token)
 
 
 def stage_import(user, candidates, report):
     cleanup_old_stages()
     token = uuid.uuid4().hex
-    d = stage_dir(token)
-    (d / "att").mkdir(parents=True)
+    storage = get_private_storage()
     slim, n = [], 0
     for c in candidates:
         c = dict(c)
         atts = []
         for a in c["attachments"]:
             n += 1
-            (d / "att" / f"{n}.bin").write_bytes(a["data"])
+            storage.save(f"imports/{token}/att/{n}.bin", ContentFile(a["data"]))
             atts.append({"path": a["path"], "blob": f"{n}.bin", "size": len(a["data"])})
         c["attachments"] = atts
         slim.append(c)
-    manifest = {"user_id": user.pk, "candidates": slim, "rejected": report.rejected, "ignored": report.ignored, "fatal": report.fatal}
-    (d / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+    manifest = {"user_id": user.pk, "created_at": time.time(), "candidates": slim, "rejected": report.rejected, "ignored": report.ignored, "fatal": report.fatal}
+    storage.save(f"imports/{token}/manifest.json", ContentFile(json.dumps(manifest).encode("utf-8")))
     return token
 
 
 def load_stage(token, user):
     """Return the manifest dict, or None if the token is invalid/foreign/expired."""
-    if not STAGE_RE.match(token or ""):
+    if not STAGE_RE.fullmatch(token or ""):
         return None
-    f = stage_dir(token) / "manifest.json"
-    if not f.is_file():
+    manifest = _stage_manifest(token)
+    if manifest is None:
         return None
-    manifest = json.loads(f.read_text(encoding="utf-8"))
+    if time.time() - manifest.get("created_at", 0) > 24 * 3600:
+        discard_stage(token)
+        return None
     return manifest if manifest.get("user_id") == user.pk else None
 
 
 def discard_stage(token):
-    if STAGE_RE.match(token or ""):
-        shutil.rmtree(stage_dir(token), ignore_errors=True)
+    if STAGE_RE.fullmatch(token or ""):
+        storage = get_private_storage()
+        manifest = _stage_manifest(token)
+        if manifest:
+            for candidate in manifest["candidates"]:
+                for attachment in candidate["attachments"]:
+                    storage.delete(f"imports/{token}/att/{attachment['blob']}")
+            storage.delete(f"imports/{token}/manifest.json")
+
+
+def read_stage_blob(token, attachment):
+    if not STAGE_RE.fullmatch(token or "") or not re.fullmatch(r"[0-9]+\.bin", attachment["blob"]):
+        raise UnsafePath("Invalid import staging object")
+    with get_private_storage().open(f"imports/{token}/att/{attachment['blob']}", "rb") as file:
+        return file.read()
 
 
 # ----------------------------------------------------------------------------- commit

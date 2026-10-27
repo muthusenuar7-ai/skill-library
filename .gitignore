@@ -26,3 +26,5 @@ docs/export-verification/
 docs/screenshots/
 .deployment-secrets/
 .publication-check/
+.agents/
+skills-lock.json

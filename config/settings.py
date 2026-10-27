@@ -6,7 +6,7 @@ manage.py defaults DJANGO_ENV=development; wsgi/asgi default to production.
 import os
 import sys
 from pathlib import Path
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -47,6 +47,9 @@ def env_list(name, default=""):
 
 ENVIRONMENT = os.environ.get("DJANGO_ENV", "production")
 DEBUG = env_bool("DJANGO_DEBUG", ENVIRONMENT == "development")
+ON_VERCEL = env_bool("VERCEL")
+if ON_VERCEL and DEBUG:
+    raise ImproperlyConfigured("DJANGO_DEBUG must be False on Vercel.")
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "")
 if not SECRET_KEY:
@@ -60,6 +63,15 @@ if not SECRET_KEY:
 
 ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,[::1]" if DEBUG else "")
 CSRF_TRUSTED_ORIGINS = env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
+if ON_VERCEL:
+    for key in ("VERCEL_URL", "VERCEL_BRANCH_URL", "VERCEL_PROJECT_PRODUCTION_URL"):
+        host = os.environ.get(key, "").strip()
+        if host and "/" not in host:
+            if host not in ALLOWED_HOSTS:
+                ALLOWED_HOSTS.append(host)
+            origin = f"https://{host}"
+            if origin not in CSRF_TRUSTED_ORIGINS:
+                CSRF_TRUSTED_ORIGINS.append(origin)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -118,7 +130,11 @@ def _database_from_url(url):
             "PASSWORD": unquote(parsed.password or ""),
             "HOST": parsed.hostname or "",
             "PORT": str(parsed.port or ""),
-            "CONN_MAX_AGE": env_int("DB_CONN_MAX_AGE", 60),
+            "CONN_MAX_AGE": env_int("DB_CONN_MAX_AGE", 0 if ON_VERCEL else 60),
+            "CONN_HEALTH_CHECKS": True,
+            "DISABLE_SERVER_SIDE_CURSORS": ON_VERCEL,
+            "OPTIONS": {key: values[-1] for key, values in parse_qs(parsed.query).items()
+                        if key in {"sslmode", "channel_binding", "connect_timeout", "application_name"}},
         }
     if scheme == "sqlite":
         return {"ENGINE": "django.db.backends.sqlite3", "NAME": unquote(parsed.path.lstrip("/")) or BASE_DIR / "db.sqlite3"}
@@ -138,6 +154,9 @@ else:
 if len(sys.argv) > 1 and sys.argv[1] == "test":
     # Fast hasher for the throw-away test database only; real runs use Django's default PBKDF2.
     PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
+
+if ON_VERCEL and DATABASES["default"]["ENGINE"] != "django.db.backends.postgresql":
+    raise ImproperlyConfigured("Vercel requires a persistent PostgreSQL DATABASE_URL; SQLite is not supported.")
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -162,13 +181,18 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
-    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedStaticFilesStorage"},
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage" if ON_VERCEL else "whitenoise.storage.CompressedStaticFilesStorage"},
 }
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Uploaded skill files and import attachments live OUTSIDE any web-served path and are only
 # delivered through views that check publication status and permissions.
 PRIVATE_MEDIA_ROOT = Path(os.environ.get("PRIVATE_MEDIA_ROOT", BASE_DIR / "private_media"))
+PRIVATE_MEDIA_STORAGE = os.environ.get("PRIVATE_MEDIA_STORAGE", "filesystem")
+if PRIVATE_MEDIA_STORAGE not in {"filesystem", "vercel_blob"}:
+    raise ImproperlyConfigured("Unknown PRIVATE_MEDIA_STORAGE backend.")
+if ON_VERCEL and PRIVATE_MEDIA_STORAGE != "vercel_blob":
+    raise ImproperlyConfigured("Vercel requires PRIVATE_MEDIA_STORAGE=vercel_blob for persistent uploads and import staging.")
 
 # ---- Sessions / cookies / HTTPS -------------------------------------------------------
 SESSION_COOKIE_AGE = env_int("SESSION_COOKIE_AGE", 8 * 3600)
@@ -188,7 +212,7 @@ if USE_HTTPS:
     SECURE_HSTS_SECONDS = env_int("DJANGO_HSTS_SECONDS", 31536000)
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = env_bool("DJANGO_HSTS_PRELOAD", True)
-    if env_bool("DJANGO_BEHIND_PROXY"):
+    if env_bool("DJANGO_BEHIND_PROXY", ON_VERCEL):
         # Only enable when a trusted reverse proxy sets/strips X-Forwarded-Proto.
         SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
@@ -202,7 +226,7 @@ if EMAIL_CONFIGURED:
     EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
     EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", True)
 else:
-    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend" if DEBUG else "django.core.mail.backends.dummy.EmailBackend"
 DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "Datacense Skill Library <no-reply@datasense.com>")
 SITE_URL = os.environ.get("SITE_URL", "").rstrip("/")  # used in invitation e-mails; falls back to the request host
 
@@ -210,6 +234,8 @@ SITE_URL = os.environ.get("SITE_URL", "").rstrip("/")  # used in invitation e-ma
 LOGIN_MAX_ATTEMPTS = env_int("LOGIN_MAX_ATTEMPTS", 5)  # per e-mail address
 LOGIN_MAX_ATTEMPTS_PER_IP = env_int("LOGIN_MAX_ATTEMPTS_PER_IP", 20)
 LOGIN_LOCKOUT_SECONDS = env_int("LOGIN_LOCKOUT_SECONDS", 15 * 60)
+if ON_VERCEL:
+    CACHES = {"default": {"BACKEND": "django.core.cache.backends.db.DatabaseCache", "LOCATION": "datacense_cache"}}
 
 # ---- Import limits (see library/importer.py) --------------------------------------------
 IMPORT_MAX_UPLOAD_BYTES = env_int("IMPORT_MAX_UPLOAD_BYTES", 25 * 1024 * 1024)

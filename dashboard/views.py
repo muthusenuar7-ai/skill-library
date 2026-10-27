@@ -255,7 +255,6 @@ def import_review(request, token):
         messages.error(request, "That import session has expired or does not belong to you. Please upload again.")
         return redirect("import_skills")
     candidates = manifest["candidates"]
-    stage = importer.stage_dir(token)
 
     if request.method == "POST":
         if request.POST.get("cancel"):
@@ -283,7 +282,7 @@ def import_review(request, token):
         status = S.PUBLISHED if request.POST.get("status") == "published" and request.user.has_perm("library.publish_skill") else S.DRAFT
 
         def read_blob(att):
-            return (stage / "att" / att["blob"]).read_bytes()
+            return importer.read_stage_blob(token, att)
 
         result = importer.commit_candidates(request.user, candidates, decisions, status, read_blob)
         importer.discard_stage(token)
