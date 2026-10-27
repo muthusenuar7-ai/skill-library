@@ -13,6 +13,9 @@ There is a single login form. It has no role selector: the role is read from the
 Stack: Django 5.2 LTS, ORM/templates/auth, vanilla JS/CSS, `markdown` + `nh3` (sanitiser), WhiteNoise, Gunicorn. Tested on Python 3.11 / Django 5.2.18.
 
 ## Quick start
+
+Production website: [Datacense AI Skill Library](https://datacense-skill-library.vercel.app/). Deployment uses Vercel's native Django runtime, persistent PostgreSQL and private Blob storage. See [Vercel deployment and operations](docs/VERCEL_DEPLOYMENT.md). SMTP is optional and must be configured for email delivery; production never logs reset tokens. Production uploads and collection exports currently have a 4 MiB content limit.
+
 Windows details are in [SETUP_WINDOWS.md](SETUP_WINDOWS.md).
 ```
 python -m venv .venv

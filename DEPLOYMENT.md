@@ -1,6 +1,6 @@
 # Deployment guide
 
-Status: this project has **not** been deployed anywhere. Local tests pass and `manage.py check --deploy` is clean with the settings below; the steps are for a Python-capable host (Render, Railway, Fly.io, Azure App Service, a Linux VM, ...).
+Production: [Datacense AI Skill Library](https://datacense-skill-library.vercel.app/) on Vercel, project `skill-library` in `muthusenuar7-ais-projects`. The application uses persistent Neon PostgreSQL and private Vercel Blob storage, including storage for import review sessions. See [the Vercel deployment guide](docs/VERCEL_DEPLOYMENT.md) for the active setup, controlled migrations, security guards and operational limits. The generic Python-host instructions below remain useful for other hosts.
 
 > **SQLite and local files are not suitable on hosts with ephemeral storage** (most PaaS free tiers and containers): the database and every uploaded file/attachment would be lost on each restart or deploy. Use PostgreSQL and a persistent disk (or object storage) in production.
 
